@@ -1,13 +1,10 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import React from "react";
 
 const feed = () => {
   return (
-    <View>
-      <Text style={{ fontSize: 24 }}>
-        {" "}
-        This is the homepage after logging in !!!{" "}
-      </Text>
+    <View style={styles.container}>
+      <Text>This is the homepage after logging in !!!</Text>
       <Text>Map goes here</Text>
       <Pressable
         onPress={() => {
@@ -19,5 +16,13 @@ const feed = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
 
 export default feed;

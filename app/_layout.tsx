@@ -1,20 +1,45 @@
-import { View, Text } from "react-native";
-import React from "react";
-import { Stack } from "expo-router";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 
-//TODO: THIS HAS MY USER AUTH LOGIC, as its top level statement for useStates, I.e user logged in needs a saved useState
-//i.e. my login.tsx logic needs to be moved into here :D
-const StackLayout = () => {
+const InitialLayout = () => {
+  const { user, initialized } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (!initialized) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (user && !inAuthGroup) {
+      router.replace("/feed");
+    } else if (!user) {
+      router.replace("/login");
+    }
+  }, [user, initialized]);
+
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: "dodgerblue" },
-        headerTintColor: "#fff",
-      }}
-    >
-      <Stack.Screen name="index" options={{ headerTitle: "SafeSense" }} />
-      <Stack.Screen name="(tabs)" options={{ headerTitle: "SafeSense" }} />
-    </Stack>
+    // empty fragment
+    <>
+      {initialized ? (
+        <Slot />
+      ) : (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      )}
+    </>
   );
 };
-export default StackLayout;
+
+const rootLayout = () => {
+  return (
+    <AuthProvider>
+      <InitialLayout />
+    </AuthProvider>
+  );
+};
+
+export default rootLayout;
