@@ -8,6 +8,7 @@ const InitialLayout = () => {
   const router = useRouter();
   const segments = useSegments();
 
+  // This useEffect will redirect the user to the feed page if they are authenticated
   useEffect(() => {
     if (!initialized) return;
 
