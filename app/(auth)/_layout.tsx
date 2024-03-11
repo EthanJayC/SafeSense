@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/context/AuthContext";
-import { LogoutButton } from "@/components/logoutBtn";
+import { LogoutButton } from "@/components/LogoutBtn";
 
 const tabsLayout = () => {
   const { user } = useAuth();
