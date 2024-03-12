@@ -15,7 +15,7 @@ const InitialLayout = () => {
     const inAuthGroup = segments[0] === "(auth)";
 
     if (user && !inAuthGroup) {
-      router.replace("/feed");
+      router.replace("/reportMap");
     } else if (!user) {
       router.replace("/login");
     }
