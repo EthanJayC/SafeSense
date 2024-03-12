@@ -9,9 +9,9 @@ const tabsLayout = () => {
   return (
     <Tabs>
       <Tabs.Screen
-        name="feed"
+        name="reportMap"
         options={{
-          tabBarLabel: "Main Feed",
+          tabBarLabel: "Report Map",
           headerRight: () => <LogoutButton />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map-outline" color={color} size={size} />
@@ -26,6 +26,21 @@ const tabsLayout = () => {
           headerRight: () => <LogoutButton />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle-outline" color={color} size={size} />
+          ),
+        }}
+        redirect={!user}
+      ></Tabs.Screen>
+      <Tabs.Screen
+        name="info"
+        options={{
+          tabBarLabel: "Info",
+          headerRight: () => <LogoutButton />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="information-circle-outline"
+              color={color}
+              size={size}
+            />
           ),
         }}
         redirect={!user}

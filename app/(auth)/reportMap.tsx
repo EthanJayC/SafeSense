@@ -26,6 +26,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { FIRESTORE_DB } from "@/config/firebaseConfig";
+import Spinner from "react-native-loading-spinner-overlay";
 
 // Initial region for the map, set to Sheffield
 const INITIAL_REGION = {
@@ -36,7 +37,7 @@ const INITIAL_REGION = {
 };
 
 // Main function for the feed page, this is where the map and report event modal are rendered
-const feed = () => {
+const reportMap = () => {
   const [region, setRegion] = useState(INITIAL_REGION);
   const [modalVisible, setModalVisible] = useState(false);
   const [reportTitle, setReportTitle] = useState("");
@@ -132,6 +133,7 @@ const feed = () => {
 
   return (
     <View style={styles.container}>
+      <Spinner visible={loading} />
       {/* Modal for reporting an event */}
       <Modal
         animationType="slide"
@@ -257,6 +259,7 @@ const feed = () => {
       >
         {/* //renders markers for each report */}
         {reports.map((report, index) => (
+          // const isMe = item.from === user.uid;   //this is for the future, to check if the user is the one who posted the report
           <Marker
             key={index}
             coordinate={report.MarkerLocation}
@@ -364,4 +367,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default feed;
+export default reportMap;
