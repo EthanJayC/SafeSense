@@ -18,8 +18,8 @@ import {
 import Spinner from "react-native-loading-spinner-overlay";
 
 const login = () => {
-  const [email, setEmail] = useState("ethan@test.com");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -63,29 +63,46 @@ const login = () => {
       >
         <View style={styles.container}>
           <View style={styles.modalView}>
-            <Text>Enter your email address:</Text>
+            <Text style={styles.modalText}>Enter your email address:</Text>
             <TextInput
               style={styles.inputField}
+              autoCapitalize="none"
               placeholder="Email"
+              keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
             />
             <Button title="Reset Password" onPress={handleForgotPassword} />
-            <Button title="Cancel" onPress={() => setModalVisible(false)} />
+            <Pressable onPress={() => setModalVisible(false)}>
+              <Text
+                style={{
+                  color: "black",
+                  fontSize: 16,
+                  marginTop: 20,
+                  textAlign: "center",
+                }}
+              >
+                CANCEL
+              </Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
 
       <Spinner visible={loading} />
       {/* add image here  */}
+      <Text style={styles.titleText}>SafeSense</Text>
       <TextInput
-        placeholder="ethan@test.com"
+        placeholder="Enter your email address"
+        keyboardType="email-address"
+        autoCapitalize="none"
         style={styles.inputField}
         value={email}
         onChangeText={setEmail}
       ></TextInput>
       <TextInput
         secureTextEntry
+        autoCapitalize="none"
         style={styles.inputField}
         value={password}
         onChangeText={setPassword}
@@ -111,7 +128,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   inputField: {
-    marginVertical: 4,
+    marginBottom: 20,
     backgroundColor: "#fff",
     padding: 10,
     borderRadius: 4,
@@ -146,7 +163,14 @@ const styles = StyleSheet.create({
     },
   },
   modalText: {
-    textAlign: "center",
+    textAlign: "left",
+    fontSize: 16,
     marginBottom: 15,
+    padding: 10,
+  },
+  titleText: {
+    textAlign: "center",
+    fontSize: 48,
+    marginBottom: 50,
   },
 });
