@@ -9,12 +9,7 @@ import {
   Pressable,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import MapView, {
-  Callout,
-  LatLng,
-  Marker,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import { Callout, LatLng, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { CircleButton } from "@/components/CircleButton";
@@ -22,11 +17,15 @@ import {
   DocumentData,
   addDoc,
   collection,
+  doc,
   getDoc,
   getDocs,
 } from "firebase/firestore";
 import { FIRESTORE_DB } from "@/config/firebaseConfig";
 import Spinner from "react-native-loading-spinner-overlay";
+import { getAuth } from "firebase/auth";
+import MapView from "react-native-map-clustering";
+import DropDownPicker from "react-native-dropdown-picker";
 
 // Initial region for the map, set to Sheffield
 const INITIAL_REGION = {
@@ -40,7 +39,6 @@ const INITIAL_REGION = {
 const reportMap = () => {
   const [region, setRegion] = useState(INITIAL_REGION);
   const [modalVisible, setModalVisible] = useState(false);
-  const [reportTitle, setReportTitle] = useState("");
   const [reportDescription, setReportDescription] = useState("");
   const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -50,26 +48,70 @@ const reportMap = () => {
   );
   const [reportInputReset, setReportInputReset] = useState(false); //this will reset the input fields to empty after the report is sent
   const [reports, setReports] = useState<DocumentData[]>([]); //this is for grabbing saved report locations from the database to create markers with
+  const [currentUser, setCurrentUser] = useState<string | null>(null); //this is for checking if the user is the one who reported the event
+  //useStates for drop down picker
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [items, setItems] = useState([
+    { label: "Driving offence", value: "Driving offence" },
+    { label: "Drug offence", value: "Drug offence" },
+    { label: "Hate crime", value: "Hate crime" },
+    { label: "Sexual offence", value: "Sexual offence" },
+    { label: "Terrorism", value: "Terrorism" },
+    {
+      label: "Verbal abuse and public harrassment",
+      value: "Verbal abuse and public harrassment",
+    },
+    { label: "Violent crime", value: "Violent crime" },
+    {
+      label: "Wildlife, rural and heritage crime",
+      value: "Wildlife, rural and heritage crime",
+    },
+    { label: "Youth crime", value: "Youth crime" },
+  ]);
+
+  //profanity checker for the report title and description
+  var Filter = require("bad-words"),
+    filter = new Filter();
+  filter.removeWords("hell", "damn"); //removes these words from the profanity filter
+
+  //Calls profanity filter to check if the report title or description contains any profanity
+  if (filter.isProfane(reportDescription)) {
+    Alert.alert("No profanity allowed, please re-enter your description");
+    setReportDescription("");
+  }
 
   // Function to save event report to database for future use, this also changes the reports state to include
   // the new report so the marker can be rendered on the map instantly
+  // created a way for get the username from the User collection to display on the marker
   const handleSaveReport = async () => {
     setLoading(true);
     try {
+      const user = getAuth().currentUser;
+      let username = null;
+      if (user) {
+        const userDoc = await getDoc(doc(FIRESTORE_DB, "users", user.uid));
+        if (userDoc.exists()) {
+          username = userDoc.data().username;
+        }
+      }
       const docRef = await addDoc(collection(FIRESTORE_DB, "reports"), {
-        Title: reportTitle,
+        Title: value,
         Description: reportDescription,
         Date: date,
         MarkerLocation: markerCoordinates,
+        UserId: user ? user.uid : null,
+        Username: username,
       });
-
-      const doc = await getDoc(docRef);
-      const newReport = doc.data();
+      const reportDoc = await getDoc(docRef);
+      const newReport = reportDoc.data();
       if (newReport) {
         setReports((prevReports) => [...prevReports, newReport]);
       }
+      Alert.alert("Report submitted successfully");
     } catch (error) {
       console.error("Error adding document: ", error);
+      Alert.alert("Report failed to submit, please try again later");
     } finally {
       setLoading(false);
     }
@@ -93,7 +135,7 @@ const reportMap = () => {
     if (!modalVisible) {
       setDate(new Date());
       setDatePickerVisibility(false);
-      setReportTitle("");
+      setValue(null);
       setReportDescription("");
       setMarkerCoordinates(null);
       setReportInputReset(false);
@@ -127,9 +169,12 @@ const reportMap = () => {
       const reports = querySnapshot.docs.map((doc) => doc.data());
       setReports(reports);
     };
-    console.log("useEffect for reports loaded");
+    const user = getAuth().currentUser;
+    if (user) {
+      setCurrentUser(user.uid);
+    }
     fetchReports();
-  }, []); //useEffect will only run once
+  }, []); //useEffect will run once when the component is mounted
 
   return (
     <View style={styles.container}>
@@ -145,13 +190,15 @@ const reportMap = () => {
       >
         <View style={styles.container}>
           <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Reporting an event</Text>
+            <Text style={styles.modalTitle}>EVENT REPORT</Text>
             <Text style={styles.modalText}>Report title:</Text>
-            <TextInput
-              style={styles.inputField}
-              placeholder="What did you see?"
-              value={reportTitle}
-              onChangeText={setReportTitle}
+            <DropDownPicker
+              open={open}
+              value={value}
+              items={items}
+              setOpen={setOpen}
+              setValue={setValue}
+              setItems={setItems}
             />
             <Text style={styles.modalText}>Report description:</Text>
             <TextInput
@@ -165,7 +212,7 @@ const reportMap = () => {
               <Text
                 style={styles.modalPressable}
                 onPress={() => {
-                  if (reportTitle == "") {
+                  if (value == "") {
                     Alert.alert(
                       "Enter a report title before adding a location"
                     );
@@ -174,7 +221,7 @@ const reportMap = () => {
                   }
                 }}
               >
-                Tap here then long tap on the map to set location
+                Tap here to select location
               </Text>
             </Pressable>
             <Text style={styles.falseTextInput}>
@@ -212,7 +259,7 @@ const reportMap = () => {
                   title="Post report"
                   onPress={() => {
                     if (
-                      reportTitle == "" ||
+                      value == null ||
                       reportDescription == "" ||
                       !date ||
                       !markerCoordinates
@@ -221,7 +268,6 @@ const reportMap = () => {
                     } else {
                       handleSaveReport();
                       setReportInputReset(true);
-                      Alert.alert("Report submitted successfully");
                       setModalVisible(false);
                     }
                   }}
@@ -249,29 +295,40 @@ const reportMap = () => {
         showsMyLocationButton={true}
         showsUserLocation={true}
         region={region}
-        //this prevents the modal from appearing if the user long presses the map without opening a report first
-        onLongPress={(e) => {
+        clusterColor="orange"
+        //this prevents the modal from appearing if the user presses the map without opening a report first
+        onPress={(e) => {
           setMarkerCoordinates(e.nativeEvent.coordinate);
-          if (reportTitle != "") {
+          if (value != null) {
+            setModalVisible(true);
+          }
+          if (reportDescription != "") {
             setModalVisible(true);
           }
         }}
       >
         {/* //renders markers for each report */}
         {reports.map((report, index) => (
-          // const isMe = item.from === user.uid;   //this is for the future, to check if the user is the one who posted the report
           <Marker
             key={index}
             coordinate={report.MarkerLocation}
             title={report.Title}
             description={report.Description}
+            pinColor={currentUser === report.UserId ? "dodgerblue" : "red"}
           >
-            {/* //custom callout for each marker so the dateTime is displayed too */}
-            <Callout>
-              <Text>Report title: {report.Title}</Text>
-              <Text>Description: {report.Description}</Text>
-              <Text>
+            {/* custom callout for each marker so the dateTime is displayed too */}
+            <Callout style={styles.callout}>
+              <Text style={styles.calloutText}>
+                Report type: {report.Title}
+              </Text>
+              <Text style={styles.calloutText}>
+                Description: {report.Description}
+              </Text>
+              <Text style={styles.calloutText}>
                 Date and time of event: {report.Date.toDate().toLocaleString()}
+              </Text>
+              <Text style={styles.calloutText}>
+                Reported by: {report.Username}
               </Text>
             </Callout>
           </Marker>
@@ -284,7 +341,7 @@ const reportMap = () => {
             setModalVisible(true);
           }}
         />
-        <Text>Report event</Text>
+        <Text style={styles.reportButtonText}>Report event</Text>
       </View>
     </View>
   );
@@ -295,28 +352,43 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "offwhite",
+  },
+  callout: {
+    width: 200,
+    padding: 10,
+    backgroundColor: "#FF7272",
+  },
+  calloutText: {
+    color: "#fff",
+    fontWeight: "bold",
+    padding: 5,
   },
   map: {
-    width: "85%",
-    height: "70%",
+    width: "95%",
+    height: "75%",
     padding: 20,
   },
   falseTextInput: {
-    marginVertical: 4,
     backgroundColor: "#fff",
     textAlign: "center",
-    color: "black",
+    color: "gray",
     padding: 10,
     borderRadius: 4,
     borderColor: "#ccc",
     borderWidth: 1,
-    height: 50,
+    marginBottom: 20,
   },
   reportButton: {
     alignItems: "center",
     padding: 20,
     textAlign: "center",
     fontSize: 20,
+  },
+  reportButtonText: {
+    fontSize: 20,
+    padding: 10,
+    color: "black",
   },
   inputField: {
     marginVertical: 4,
@@ -335,7 +407,7 @@ const styles = StyleSheet.create({
   },
   modalText: {
     textAlign: "left",
-    fontSize: 16,
+    fontSize: 20,
   },
   modalFooter: {
     flexDirection: "row",
@@ -347,6 +419,7 @@ const styles = StyleSheet.create({
     padding: 5,
     textAlign: "center",
     color: "dodgerblue",
+    fontSize: 16,
   },
   modalView: {
     width: "80%",

@@ -23,6 +23,11 @@ const info = () => {
             4. Once the report is submitted, your own marker of the event will
             appear on the map.
           </Text>
+          <Text style={[{ fontWeight: "bold" }, styles.text]}>
+            Note: As reports are user generated, the accuracy of the information
+            cannot be guaranteed. Use this app responsibly and always contact
+            the emergency services if you are in immediate danger.
+          </Text>
         </ScrollView>
       </View>
     </View>

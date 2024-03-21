@@ -19,6 +19,7 @@ const register = () => {
         email,
         password
       );
+      console.log("User created: ", user.user.uid);
       await createUserInformation(user);
     } catch (error: any) {
       alert(error.message);
@@ -44,12 +45,15 @@ const register = () => {
       <Spinner visible={loading} />
       <TextInput
         placeholder="Enter username"
+        autoCapitalize="none"
         style={styles.inputField}
         value={username}
         onChangeText={setUsername}
       ></TextInput>
       <TextInput
         placeholder="Enter email address"
+        autoCapitalize="none"
+        keyboardType="email-address"
         style={styles.inputField}
         value={email}
         onChangeText={setEmail}
